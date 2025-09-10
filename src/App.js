@@ -11,8 +11,14 @@ import {
 } from 'lucide-react';
 
 // Configuration Supabase
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'YOUR_SUPABASE_URL';
-const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'YOUR_SUPABASE_ANON_KEY';
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'placeholder-key';
+
+// Vérification des variables d'environnement
+if (supabaseUrl === 'https://placeholder.supabase.co' || supabaseKey === 'placeholder-key') {
+  console.warn('⚠️  Variables d\'environnement Supabase non configurées');
+}
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Context d'authentification
@@ -75,22 +81,18 @@ const AuthProvider = ({ children }) => {
   };
 
   const signUp = async (email, password, service) => {
-  const { data, error } = await supabase.auth.signUp({ email, password });
-  
-  if (!error && data.user) {
-    // Créer le profil manuellement après la création de l'utilisateur
-    await supabase
-      .from('profiles')
-      .insert([{
-        id: data.user.id,
-        email: data.user.email,
-        service: service,
-        role: 'user'
-      }]);
-  }
-  
-  return { data, error };
-};
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    
+    if (!error && data.user) {
+      // Mettre à jour le profil avec le service
+      await supabase
+        .from('profiles')
+        .update({ service })
+        .eq('id', data.user.id);
+    }
+    
+    return { data, error };
+  };
 
   const signIn = async (email, password) => {
     return await supabase.auth.signInWithPassword({ email, password });
@@ -415,7 +417,7 @@ const RequestsList = () => {
 
   useEffect(() => {
     fetchRequests();
-  }, [filter, profile]);
+  }, [filter, profile]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchRequests = async () => {
     if (!profile) return;
