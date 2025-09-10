@@ -42,6 +42,12 @@ const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Timeout de sécurité pour éviter le chargement infini
+    const loadingTimeout = setTimeout(() => {
+      console.warn('⚠️ Timeout de chargement - déblocage forcé');
+      setLoading(false);
+    }, 15000); // 15 secondes max
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -49,9 +55,15 @@ const AuthProvider = ({ children }) => {
       } else {
         setLoading(false);
       }
+      clearTimeout(loadingTimeout);
+    }).catch((error) => {
+      console.error('❌ Erreur getSession:', error);
+      setLoading(false);
+      clearTimeout(loadingTimeout);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth state change:', event);
       setUser(session?.user ?? null);
       if (session?.user) {
         await fetchProfile(session.user.id);
@@ -61,7 +73,10 @@ const AuthProvider = ({ children }) => {
       }
     });
 
-    return () => subscription?.unsubscribe();
+    return () => {
+      subscription?.unsubscribe();
+      clearTimeout(loadingTimeout);
+    };
   }, []);
 
   const fetchProfile = async (userId) => {
