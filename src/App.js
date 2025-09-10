@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { 
@@ -10,11 +11,13 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
+// Import du CSS
+import './styles.css';
+
 // Configuration Supabase
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'placeholder-key';
 
-// Vérification des variables d'environnement
 if (supabaseUrl === 'https://placeholder.supabase.co' || supabaseKey === 'placeholder-key') {
   console.warn('⚠️  Variables d\'environnement Supabase non configurées');
 }
@@ -39,7 +42,6 @@ const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Récupérer la session initiale
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -49,7 +51,6 @@ const AuthProvider = ({ children }) => {
       }
     });
 
-    // Écouter les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -84,7 +85,6 @@ const AuthProvider = ({ children }) => {
     const { data, error } = await supabase.auth.signUp({ email, password });
     
     if (!error && data.user) {
-      // Mettre à jour le profil avec le service
       await supabase
         .from('profiles')
         .update({ service })
@@ -155,46 +155,47 @@ const AuthForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full space-y-8 p-8">
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            {isSignUp ? 'Créer un compte' : 'Se connecter'}
-          </h2>
-        </div>
-        <div className="mt-8 space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Email</label>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2 className="auth-title">
+          {isSignUp ? '✨ Créer un compte' : '🔐 Se connecter'}
+        </h2>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label className="form-label">📧 Adresse email</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="form-control"
+              placeholder="votre.email@centre-diagnostic.com"
             />
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Mot de passe</label>
+          <div className="form-group">
+            <label className="form-label">🔒 Mot de passe</label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="form-control"
+              placeholder="Votre mot de passe"
             />
           </div>
 
           {isSignUp && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Service</label>
+            <div className="form-group">
+              <label className="form-label">🏢 Service</label>
               <select
                 required
                 value={service}
                 onChange={(e) => setService(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="form-control"
               >
-                <option value="">Sélectionnez un service</option>
+                <option value="">Sélectionnez votre service</option>
                 {services.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
@@ -203,26 +204,27 @@ const AuthForm = () => {
           )}
 
           {error && (
-            <div className="text-red-600 text-sm">{error}</div>
+            <div className="error-message">{error}</div>
           )}
 
           <button
-            onClick={handleSubmit}
+            type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            className="btn btn-primary"
+            style={{ width: '100%', justifyContent: 'center' }}
           >
-            {loading ? 'Chargement...' : (isSignUp ? 'Créer le compte' : 'Se connecter')}
+            {loading ? '⏳ Chargement...' : (isSignUp ? '✨ Créer le compte' : '🚀 Se connecter')}
           </button>
 
-          <div className="text-center">
+          <div className="auth-toggle">
             <button
+              type="button"
               onClick={() => setIsSignUp(!isSignUp)}
-              className="text-blue-600 hover:text-blue-500 text-sm"
             >
               {isSignUp ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? S\'inscrire'}
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
@@ -257,7 +259,8 @@ const CreateRequest = ({ onClose, onSuccess }) => {
     'Direction', 'Laboratoire', 'Comptabilité', 'Cotation', 'Stock', 'Trésorerie et caisse'
   ];
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!type || !title || !description || !location || !serviceDemandeur) {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
@@ -291,115 +294,131 @@ const CreateRequest = ({ onClose, onSuccess }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-screen overflow-y-auto p-6">
-        <h2 className="text-2xl font-bold mb-4">Nouvelle demande</h2>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2 className="modal-title">🎫 Nouvelle demande</h2>
+        </div>
         
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Type de demande</label>
-            <select
-              value={type}
-              onChange={(e) => {
-                setType(e.target.value);
-                setCategory('');
-              }}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">Sélectionnez un type</option>
-              <option value="incident">Incident</option>
-              <option value="order">Commande</option>
-            </select>
-          </div>
-
-          {type && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Catégorie</label>
+        <div className="modal-body">
+          <form onSubmit={handleSubmit}>
+            <div className="form-group">
+              <label className="form-label">📋 Type de demande</label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                value={type}
+                onChange={(e) => {
+                  setType(e.target.value);
+                  setCategory('');
+                }}
+                className="form-control"
+                required
               >
-                <option value="">Sélectionnez une catégorie</option>
-                {(type === 'incident' ? incidentCategories : orderCategories).map((cat) => (
-                  <option key={cat} value={cat}>{cat}</option>
+                <option value="">Sélectionnez un type</option>
+                <option value="incident">🚨 Incident technique</option>
+                <option value="order">🛒 Commande matériel</option>
+              </select>
+            </div>
+
+            {type && (
+              <div className="form-group">
+                <label className="form-label">🏷️ Catégorie</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="form-control"
+                  required
+                >
+                  <option value="">Sélectionnez une catégorie</option>
+                  {(type === 'incident' ? incidentCategories : orderCategories).map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label">📝 Titre de la demande</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="form-control"
+                placeholder="Résumé court du problème ou besoin"
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">📄 Description détaillée</label>
+              <textarea
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="form-control form-textarea"
+                placeholder="Décrivez en détail votre problème ou besoin..."
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">📍 Localisation</label>
+              <input
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                className="form-control"
+                placeholder="Bureau, étage, service..."
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">🚦 Niveau de priorité</label>
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                className="form-control"
+              >
+                <option value="basse">🟢 Basse - Pas urgent</option>
+                <option value="moyenne">🟡 Moyenne - Assez important</option>
+                <option value="urgente">🔴 Urgente - Bloquant</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">🏢 Service demandeur</label>
+              <select
+                value={serviceDemandeur}
+                onChange={(e) => setServiceDemandeur(e.target.value)}
+                className="form-control"
+                required
+              >
+                <option value="">Sélectionnez un service</option>
+                {services.map((s) => (
+                  <option key={s} value={s}>{s}</option>
                 ))}
               </select>
             </div>
-          )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Titre de la demande</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Description détaillée</label>
-            <textarea
-              rows={4}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Localisation</label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Priorité</label>
-            <select
-              value={priority}
-              onChange={(e) => setPriority(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="basse">Basse</option>
-              <option value="moyenne">Moyenne</option>
-              <option value="urgente">Urgente</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Service demandeur</label>
-            <select
-              value={serviceDemandeur}
-              onChange={(e) => setServiceDemandeur(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">Sélectionnez un service</option>
-              {services.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? 'Création...' : 'Créer la demande'}
-            </button>
-            <button
-              onClick={onClose}
-              className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700"
-            >
-              Annuler
-            </button>
-          </div>
+            <div className="modal-actions">
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn btn-primary"
+                style={{ flex: 1 }}
+              >
+                {loading ? '⏳ Création...' : '✅ Créer la demande'}
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="btn btn-secondary"
+                style={{ flex: 1 }}
+              >
+                ❌ Annuler
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -430,7 +449,6 @@ const RequestsList = () => {
         assigned_profile:profiles!requests_assigned_to_fkey(email, service)
       `).order('created_at', { ascending: false });
 
-      // Filtrage selon le rôle
       if (!isITOrAdmin) {
         query = query.eq('user_id', profile.id);
       } else if (filter === 'assigned') {
@@ -460,13 +478,13 @@ const RequestsList = () => {
       
       if (data) {
         fetchRequests();
-        alert('Demande prise en charge avec succès !');
+        alert('✅ Demande prise en charge avec succès !');
       } else {
-        alert('Impossible de prendre cette demande');
+        alert('❌ Impossible de prendre cette demande');
       }
     } catch (error) {
       console.error('Erreur:', error);
-      alert('Erreur lors de la prise en charge');
+      alert('❌ Erreur lors de la prise en charge');
     }
   };
 
@@ -483,124 +501,153 @@ const RequestsList = () => {
       if (error) throw error;
       
       fetchRequests();
-      alert('Demande clôturée avec succès !');
+      alert('🎉 Demande clôturée avec succès !');
     } catch (error) {
       console.error('Erreur:', error);
-      alert('Erreur lors de la clôture');
+      alert('❌ Erreur lors de la clôture');
     }
   };
 
   const getStatusIcon = (status) => {
+    const iconProps = { className: 'status-icon' };
     switch (status) {
       case 'ouvert':
-        return React.createElement(AlertCircle, { className: "w-5 h-5 text-red-500" });
+        return React.createElement(AlertCircle, { ...iconProps, color: '#ef4444' });
       case 'en_cours':
-        return React.createElement(Clock, { className: "w-5 h-5 text-yellow-500" });
+        return React.createElement(Clock, { ...iconProps, color: '#f59e0b' });
       case 'termine':
-        return React.createElement(CheckCircle, { className: "w-5 h-5 text-green-500" });
+        return React.createElement(CheckCircle, { ...iconProps, color: '#10b981' });
       default:
-        return React.createElement(AlertCircle, { className: "w-5 h-5 text-gray-500" });
+        return React.createElement(AlertCircle, { ...iconProps, color: '#6b7280' });
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'urgente':
-        return 'text-red-600 bg-red-100';
-      case 'moyenne':
-        return 'text-yellow-600 bg-yellow-100';
-      case 'basse':
-        return 'text-green-600 bg-green-100';
+  const getPriorityBadgeClass = (priority) => {
+    return `badge badge-priority-${priority}`;
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'ouvert':
+        return '🆕 Nouveau';
+      case 'en_cours':
+        return '⏳ En cours';
+      case 'termine':
+        return '✅ Terminé';
       default:
-        return 'text-gray-600 bg-gray-100';
+        return status;
     }
   };
 
   if (loading) {
-    return <div className="text-center py-8">Chargement...</div>;
+    return (
+      <div className="loading-state">
+        <div className="animate-pulse">⏳ Chargement des demandes...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-4">
+    <div>
       {isITOrAdmin && (
-        <div className="flex gap-2">
+        <div className="filter-tabs">
           <button
             onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-md ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+            className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
           >
-            Toutes
+            📋 Toutes les demandes
           </button>
           <button
             onClick={() => setFilter('unassigned')}
-            className={`px-4 py-2 rounded-md ${filter === 'unassigned' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+            className={`filter-tab ${filter === 'unassigned' ? 'active' : ''}`}
           >
-            Non assignées
+            🆕 Non assignées
           </button>
           <button
             onClick={() => setFilter('assigned')}
-            className={`px-4 py-2 rounded-md ${filter === 'assigned' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+            className={`filter-tab ${filter === 'assigned' ? 'active' : ''}`}
           >
-            Mes demandes
+            👤 Mes demandes
           </button>
         </div>
       )}
 
       {requests.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">Aucune demande trouvée</div>
+        <div className="empty-state">
+          <h3>🕳️ Aucune demande trouvée</h3>
+          <p>Il n'y a actuellement aucune demande correspondant à vos critères.</p>
+        </div>
       ) : (
-        <div className="space-y-4">
+        <div>
           {requests.map((request) => (
-            <div key={request.id} className="bg-white border rounded-lg p-4 shadow">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    {getStatusIcon(request.status)}
-                    <h3 className="text-lg font-semibold">{request.title}</h3>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(request.priority)}`}>
-                      {request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
-                    </span>
-                    <span className="text-xs text-gray-500 flex items-center gap-1">
-                      {request.type === 'incident' ? 
-                        React.createElement(AlertTriangle, { className: "w-4 h-4" }) : 
-                        React.createElement(ShoppingCart, { className: "w-4 h-4" })
-                      }
-                      {request.type === 'incident' ? 'Incident' : 'Commande'}
-                    </span>
+            <div key={request.id} className="card">
+              <div className="card-body">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <div className="card-header">
+                      {getStatusIcon(request.status)}
+                      <div>
+                        <h3 className="card-title">{request.title}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+                          <span className={getPriorityBadgeClass(request.priority)}>
+                            {request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
+                          </span>
+                          <div className="type-indicator">
+                            {request.type === 'incident' ? 
+                              React.createElement(AlertTriangle, { size: 14 }) : 
+                              React.createElement(ShoppingCart, { size: 14 })
+                            }
+                            {request.type === 'incident' ? 'Incident' : 'Commande'}
+                          </div>
+                          <span style={{ fontSize: '0.75rem', color: '#6b7280' }}>
+                            {getStatusText(request.status)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="card-content">
+                      {request.description}
+                    </div>
+                    
+                    <div className="card-footer">
+                      <div>📍 <strong>Localisation:</strong> {request.location}</div>
+                      <div>🏢 <strong>Service:</strong> {request.service_demandeur}</div>
+                      <div>👤 <strong>Demandeur:</strong> {request.profiles?.email}</div>
+                      {request.assigned_profile && (
+                        <div>⚡ <strong>Assigné à:</strong> {request.assigned_profile.email}</div>
+                      )}
+                      <div>📅 <strong>Créé le:</strong> {new Date(request.created_at).toLocaleDateString('fr-FR', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}</div>
+                    </div>
                   </div>
                   
-                  <p className="text-gray-600 mb-2">{request.description}</p>
-                  
-                  <div className="text-sm text-gray-500 space-y-1">
-                    <div>📍 {request.location}</div>
-                    <div>🏢 Service: {request.service_demandeur}</div>
-                    <div>👤 Demandeur: {request.profiles?.email}</div>
-                    {request.assigned_profile && (
-                      <div>⚡ Assigné à: {request.assigned_profile.email}</div>
-                    )}
-                    <div>📅 Créé le: {new Date(request.created_at).toLocaleString()}</div>
-                  </div>
+                  {isITOrAdmin && (
+                    <div className="card-actions">
+                      {request.status === 'ouvert' && !request.assigned_to && (
+                        <button
+                          onClick={() => takeRequest(request.id)}
+                          className="btn btn-primary"
+                        >
+                          🚀 Prendre en charge
+                        </button>
+                      )}
+                      {request.status === 'en_cours' && (request.assigned_to === profile.id || profile.role === 'admin') && (
+                        <button
+                          onClick={() => closeRequest(request.id)}
+                          className="btn btn-success"
+                        >
+                          ✅ Clôturer
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
-                
-                {isITOrAdmin && (
-                  <div className="ml-4 space-y-2">
-                    {request.status === 'ouvert' && !request.assigned_to && (
-                      <button
-                        onClick={() => takeRequest(request.id)}
-                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
-                      >
-                        Prendre
-                      </button>
-                    )}
-                    {request.status === 'en_cours' && (request.assigned_to === profile.id || profile.role === 'admin') && (
-                      <button
-                        onClick={() => closeRequest(request.id)}
-                        className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
-                      >
-                        Clôturer
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           ))}
@@ -621,42 +668,39 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">Gestion d'incidents</h1>
+    <div className="app-container">
+      <nav className="navbar">
+        <div className="nav-content">
+          <h1 className="nav-title">🎫 Centre Diagnostic - Support IT</h1>
+          <div className="nav-actions">
+            <div className="user-info">
+              <span>👤 {profile?.email}</span>
+              <span>🏢 {profile?.service}</span>
+              {(profile?.role === 'it_member' || profile?.role === 'admin') && 
+                <span className="user-badge">
+                  {profile?.role === 'admin' ? '👑 Admin' : '🔧 IT'}
+                </span>
+              }
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600">
-                {profile?.email} ({profile?.service})
-                {(profile?.role === 'it_member' || profile?.role === 'admin') && 
-                  <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                    {profile?.role === 'admin' ? 'Admin' : 'IT'}
-                  </span>
-                }
-              </span>
-              <button
-                onClick={() => setShowCreateRequest(true)}
-                className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Nouvelle demande
-              </button>
-              <button
-                onClick={signOut}
-                className="text-gray-600 hover:text-gray-900 flex items-center gap-2"
-              >
-                <LogOut className="w-4 h-4" />
-                Déconnexion
-              </button>
-            </div>
+            <button
+              onClick={() => setShowCreateRequest(true)}
+              className="btn btn-primary"
+            >
+              <Plus size={18} />
+              Nouvelle demande
+            </button>
+            <button
+              onClick={signOut}
+              className="btn btn-ghost"
+            >
+              <LogOut size={18} />
+              Déconnexion
+            </button>
           </div>
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      <main className="main-content">
         <RequestsList key={refreshTrigger} />
       </main>
 
@@ -676,8 +720,8 @@ const App = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Chargement...</div>
+      <div className="loading-state" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div>⏳ Chargement de l'application...</div>
       </div>
     );
   }
